@@ -1,0 +1,25 @@
+{
+  "name": "ai-career-prediction",
+  "version": "1.0.0",
+  "description": "使用 NVIDIA AI API 预测未来职业方向的网站",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "nvidia",
+    "ai",
+    "career",
+    "prediction",
+    "webcam"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7"
+  }
+}
