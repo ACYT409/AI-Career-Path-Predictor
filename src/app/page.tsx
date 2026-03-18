@@ -44,22 +44,42 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const openWebcam = async () => {
+    setCameraError(null);
+    setVideoReady(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 640, height: 480 } 
+      });
+      streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        streamRef.current = stream;
         setWebcamOpen(true);
+        
+        // 等待视频真正准备好
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            setVideoReady(true);
+          }).catch((err) => {
+            console.error("播放失败:", err);
+            setCameraError("视频播放失败，请重试");
+          });
+        };
       }
-    } catch (err) {
-      alert("无法访问摄像头，请检查权限设置");
+    } catch (err: any) {
+      setCameraError(err.name === "NotAllowedError" 
+        ? "摄像头权限被拒绝，请在浏览器设置中允许访问" 
+        : "无法访问摄像头，请检查设备连接");
       console.error(err);
+      setWebcamOpen(false);
     }
   };
 
@@ -68,7 +88,7 @@ export default function Home() {
       const video = videoRef.current;
       
       // 检查视频是否已准备好
-      if (video.readyState < 2) {
+      if (!videoReady || video.readyState < 2) {
         alert("摄像头正在加载中，请稍等片刻再拍照");
         return;
       }
@@ -158,6 +178,19 @@ export default function Home() {
         {/* Webcam Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-700 mb-4">📸 拍摄照片</h2>
+          
+          {cameraError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700">{cameraError}</p>
+              <button
+                onClick={() => setCameraError(null)}
+                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              >
+                关闭错误提示
+              </button>
+            </div>
+          )}
+          
           {!photo ? (
             <div className="space-y-4">
               {!webcamOpen ? (
@@ -169,16 +202,33 @@ export default function Home() {
                 </button>
               ) : (
                 <div className="space-y-4">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full rounded-lg border-2 border-indigo-300"
-                  />
+                  <div className="relative w-full">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className={`w-full rounded-lg border-2 ${
+                        videoReady ? "border-green-400" : "border-yellow-400 animate-pulse"
+                      }`}
+                    />
+                    {!videoReady && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                        <div className="text-white text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                          <p>摄像头加载中...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-4">
                     <button
                       onClick={takePhoto}
-                      className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      disabled={!videoReady}
+                      className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
+                        videoReady
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                      }`}
                     >
                       📷 拍照
                     </button>
