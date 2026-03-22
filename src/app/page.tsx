@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Question {
   id: number;
@@ -45,69 +45,34 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [videoReady, setVideoReady] = useState(false);
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const openWebcam = async () => {
     setCameraError(null);
-    setVideoReady(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 }
       });
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setWebcamOpen(true);
-        
-        // 等待视频真正准备好
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            setVideoReady(true);
-          }).catch((err) => {
-            console.error("播放失败:", err);
-            setCameraError("视频播放失败，请重试");
-          });
+          videoRef.current?.play();
         };
+        videoRef.current.play().catch(() => {});
       }
+      
+      setWebcamOpen(true);
     } catch (err: any) {
-      setCameraError(err.name === "NotAllowedError" 
-        ? "摄像头权限被拒绝，请在浏览器设置中允许访问" 
+      setCameraError(err.name === "NotAllowedError"
+        ? "摄像头权限被拒绝，请在浏览器设置中允许访问"
         : "无法访问摄像头，请检查设备连接");
       console.error(err);
       setWebcamOpen(false);
-    }
-  };
-
-  const takePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      
-      // 检查视频是否已准备好
-      if (!videoReady || video.readyState < 2) {
-        alert("摄像头正在加载中，请稍等片刻再拍照");
-        return;
-      }
-      
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const photoData = canvas.toDataURL("image/png");
-        setPhoto(photoData);
-        closeWebcam();
-      } else {
-        alert("无法获取画布上下文，请重试");
-      }
-    } else {
-      alert("摄像头未正确初始化，请重试");
     }
   };
 
@@ -119,38 +84,49 @@ export default function Home() {
     setWebcamOpen(false);
   };
 
+  const takePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      // 使用默认尺寸或视频实际尺寸
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const photoData = canvas.toDataURL("image/png");
+        setPhoto(photoData);
+        closeWebcam();
+      }
+    }
+  };
+
   const handleAnswer = (questionId: number, answer: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
   const handleSubmit = async () => {
-    if (!photo) {
-      alert("请先拍摄照片");
-      return;
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert("请输入有效的邮箱地址");
-      return;
-    }
-    if (Object.keys(answers).length < questions.length) {
-      alert("请回答所有问题");
+    if (!photo || !email || Object.keys(answers).length < questions.length) {
+      alert("请完成所有步骤：拍照、填写邮箱、回答所有问题");
       return;
     }
 
     setLoading(true);
     try {
+      const formData = new FormData();
+      formData.append("photo", photo);
+      formData.append("email", email);
+      formData.append("answers", JSON.stringify(answers));
+
       const response = await fetch("/api/predict", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photo,
-          email,
-          answers,
-        }),
+        body: formData,
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         setSubmitted(true);
         setResult(data.result);
@@ -178,7 +154,7 @@ export default function Home() {
         {/* Webcam Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-700 mb-4">📸 拍摄照片</h2>
-          
+
           {cameraError && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700">{cameraError}</p>
@@ -190,7 +166,7 @@ export default function Home() {
               </button>
             </div>
           )}
-          
+
           {!photo ? (
             <div className="space-y-4">
               {!webcamOpen ? (
@@ -202,35 +178,20 @@ export default function Home() {
                 </button>
               ) : (
                 <div className="space-y-4">
-                  <div className="relative w-full">
+                  <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ minHeight: "480px" }}>
                     <video
                       ref={videoRef}
                       autoPlay
                       playsInline
-                      className={`w-full rounded-lg border-2 ${
-                        videoReady ? "border-green-400" : "border-yellow-400 animate-pulse"
-                      }`}
+                      className="w-full h-full object-cover"
                     />
-                    {!videoReady && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
-                        <div className="text-white text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-                          <p>摄像头加载中...</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                   <div className="flex gap-4">
                     <button
                       onClick={takePhoto}
-                      disabled={!videoReady}
-                      className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
-                        videoReady
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      }`}
+                      className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                     >
-                      📷 拍照
+                      📷 确认拍照
                     </button>
                     <button
                       onClick={closeWebcam}
