@@ -65,17 +65,29 @@ export default function Home() {
 
   const takePhoto = () => {
     if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
       const video = videoRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      
+      // 检查视频是否已准备好
+      if (video.readyState < 2) {
+        alert("摄像头正在加载中，请稍等片刻再拍照");
+        return;
+      }
+      
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        ctx.drawImage(video, 0, 0);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const photoData = canvas.toDataURL("image/png");
         setPhoto(photoData);
         closeWebcam();
+      } else {
+        alert("无法获取画布上下文，请重试");
       }
+    } else {
+      alert("摄像头未正确初始化，请重试");
     }
   };
 

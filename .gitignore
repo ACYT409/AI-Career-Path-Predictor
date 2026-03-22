@@ -1,21 +1,12 @@
-```
+```gitignore
 # Dependencies
 node_modules/
 
-# Environment
-.env
-.env.local
-*.env.*
-
-# Logs
-*.log
-
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
+# Build outputs
+dist/
+build/
+.next/
+out/
 
 # Python
 __pycache__/
@@ -23,23 +14,28 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+env/
 venv/
 .venv/
+.ENV
+.python-version
+
+# Logs
+*.log
+
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
 
-# Build outputs
-dist/
-build/
-*.out
-*.exe
-*.dll
-*.so
-*.a
-*.obj
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
 
@@ -47,8 +43,41 @@ Thumbs.db
 coverage/
 htmlcov/
 .coverage
+*.coveragerc
 
 # Testing
 .mypy_cache/
 .pytest_cache/
+.nyc_output/
+coverage-final.json
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
