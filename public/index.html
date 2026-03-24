@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Path Predictor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 2.5em; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 1.1em; }
+        .section { margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px; }
+        .section-title { font-size: 1.3em; color: #667eea; margin-bottom: 15px; font-weight: 600; }
+        
+        #camera-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto 20px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 480px;
+        }
+        #camera-container.active { display: block; }
+        #video-preview { width: 100%; height: auto; display: block; transform: scaleX(-1); }
+        #canvas-capture { display: none; }
+        .camera-controls { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4); }
+        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(235, 51, 73, 0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        #photo-preview { display: none; max-width: 100%; border-radius: 10px; margin: 20px auto; border: 4px solid #667eea; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+        input[type="email"], select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em; transition: border-color 0.3s ease; }
+        input[type="email"]:focus, select:focus { outline: none; border-color: #667eea; }
+        .question-item { margin-bottom: 20px; }
+        .question-text { font-weight: 600; color: #333; margin-bottom: 8px; }
+        
+        .loading { text-align: center; padding: 40px; display: none; }
+        .loading.active { display: block; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .result-section { display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin-top: 30px; }
+        .result-section.active { display: block; }
+        .result-section h2 { margin-bottom: 20px; font-size: 1.8em; }
+        .result-content { line-height: 1.8; white-space: pre-wrap; }
+        
+        .error-message { background: #fee; color: #c33; padding: 15px; border-radius: 10px; margin: 15px 0; display: none; }
+        .error-message.active { display: block; }
+        .success-message { background: #efe; color: #3c3; padding: 15px; border-radius: 10px; margin: 15px 0; display: none; }
+        .success-message.active { display: block; }
+        
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.8em; }
+            .btn { padding: 10px 20px; font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 AI Career Path Predictor</h1>
+        <p class="subtitle">Discover your future career direction with AI analysis</p>
+        
+        <!-- Camera Section -->
+        <div class="section">
+            <div class="section-title">📷 Step 1: Take Your Photo</div>
+            <div id="camera-container"><video id="video-preview" autoplay muted playsinline></video></div>
+            <canvas id="canvas-capture"></canvas>
+            <img id="photo-preview" alt="Captured photo">
+            <div class="camera-controls">
+                <button id="btn-open-camera" class="btn btn-primary" onclick="openCamera()">📷 Open Camera</button>
+                <button id="btn-capture" class="btn btn-success" onclick="capturePhoto()" style="display:none;">✅ Capture Photo</button>
+                <button id="btn-retake" class="btn btn-danger" onclick="retakePhoto()" style="display:none;">🔄 Retake</button>
+            </div>
+            <div id="camera-error" class="error-message"></div>
+        </div>
+        
+        <!-- Email Section -->
+        <div class="section">
+            <div class="section-title">📧 Step 2: Your Email</div>
+            <div class="form-group">
+                <label for="email">Enter your email to receive the career prediction report:</label>
+                <input type="email" id="email" placeholder="your.email@example.com" required>
+            </div>
+        </div>
+        
+        <!-- Questions Section -->
+        <div class="section">
+            <div class="section-title">❓ Step 3: Answer Questions</div>
+            <div class="question-item">
+                <div class="question-text">1. What type of activities do you enjoy most?</div>
+                <select id="q1">
+                    <option value="">-- Select an option --</option>
+                    <option value="analytical">🔍 Analyzing data and solving complex problems</option>
+                    <option value="creative">🎨 Creating art, designs, or innovative ideas</option>
+                    <option value="social">👥 Helping people and working in teams</option>
+                    <option value="practical">🔧 Building things and working with hands</option>
+                    <option value="leadership">📊 Leading projects and managing people</option>
+                </select>
+            </div>
+            <div class="question-item">
+                <div class="question-text">2. What is your ideal work environment?</div>
+                <select id="q2">
+                    <option value="">-- Select an option --</option>
+                    <option value="office">🏢 Traditional office setting</option>
+                    <option value="remote">🏠 Remote/work from home</option>
+                    <option value="outdoor">🌲 Outdoor or field work</option>
+                    <option value="lab">🔬 Laboratory or research facility</option>
+                    <option value="studio">🎭 Creative studio or workshop</option>
+                </select>
+            </div>
+            <div class="question-item">
+                <div class="question-text">3. How do you usually handle challenges?</div>
+                <select id="q3">
+                    <option value="">-- Select an option --</option>
+                    <option value="systematic">📋 Break them down systematically</option>
+                    <option value="intuitive">💡 Trust my intuition and experiment</option>
+                    <option value="collaborative">🤝 Ask for help and collaborate</option>
+                    <option value="persistent">💪 Keep trying until I solve it</option>
+                    <option value="strategic">♟️ Plan a strategic approach first</option>
+                </select>
+            </div>
+            <div class="question-item">
+                <div class="question-text">4. What do you value most in a career?</div>
+                <select id="q4">
+                    <option value="">-- Select an option --</option>
+                    <option value="salary">💰 High salary and financial security</option>
+                    <option value="impact">🌟 Making a positive impact on society</option>
+                    <option value="creativity">🎨 Creative freedom and expression</option>
+                    <option value="stability">🛡️ Job stability and work-life balance</option>
+                    <option value="growth">📈 Continuous learning and growth</option>
+                </select>
+            </div>
+            <div class="question-item">
+                <div class="question-text">5. How do you prefer to process information?</div>
+                <select id="q5">
+                    <option value="">-- Select an option --</option>
+                    <option value="visual">📊 Visual charts and diagrams</option>
+                    <option value="verbal">📖 Reading and writing</option>
+                    <option value="hands-on">👐 Hands-on practice</option>
+                    <option value="discussion">💬 Discussions and debates</option>
+                    <option value="logical">🧮 Logical step-by-step analysis</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button id="btn-submit" class="btn btn-primary" onclick="submitForm()" style="padding: 15px 50px; font-size: 1.2em;">🚀 Get AI Career Prediction</button>
+        </div>
+        
+        <div id="loading" class="loading"><div class="spinner"></div><p>Analyzing your profile with AI...</p><p style="color: #666; margin-top: 10px; font-size: 0.9em;">This may take 30-60 seconds</p></div>
+        <div id="error-msg" class="error-message"></div>
+        <div id="success-msg" class="success-message"></div>
+        
+        <div id="result" class="result-section">
+            <h2>🎯 Your AI Career Prediction</h2>
+            <div id="result-content" class="result-content"></div>
+            <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">📧 A detailed report has been sent to your email!</p>
+        </div>
+    </div>
+
+    <script>
+        let capturedPhotoData = null;
+        let stream = null;
+        
+        async function openCamera() {
+            const video = document.getElementById('video-preview');
+            const container = document.getElementById('camera-container');
+            const errorMsg = document.getElementById('camera-error');
+            const btnOpen = document.getElementById('btn-open-camera');
+            const btnCapture = document.getElementById('btn-capture');
+            
+            errorMsg.classList.remove('active');
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, 
+                    audio: false 
+                });
+                
+                console.log('📹 Camera stream obtained');
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = () => {
+                    video.play().then(() => {
+                        console.log('✅ Video playing');
+                    }).catch(err => {
+                        console.error('⚠️ Play failed:', err);
+                        video.play();
+                    });
+                };
+                
+                container.classList.add('active');
+                btnOpen.style.display = 'none';
+                btnCapture.style.display = 'inline-flex';
+                
+                setTimeout(() => { if (video.paused) video.play(); }, 500);
+                
+            } catch (err) {
+                console.error('❌ Camera error:', err);
+                let message = 'Failed to access camera. ';
+                if (err.name === 'NotAllowedError') message += 'Please allow camera permission.';
+                else if (err.name === 'NotFoundError') message += 'No camera found.';
+                else if (err.name === 'NotReadableError') message += 'Camera is busy.';
+                else message += err.message;
+                
+                errorMsg.textContent = message;
+                errorMsg.classList.add('active');
+            }
+        }
+        
+        function capturePhoto() {
+            const video = document.getElementById('video-preview');
+            const canvas = document.getElementById('canvas-capture');
+            const photoPreview = document.getElementById('photo-preview');
+            const container = document.getElementById('camera-container');
+            const btnCapture = document.getElementById('btn-capture');
+            const btnRetake = document.getElementById('btn-retake');
+            
+            if (video.readyState < 2) { alert('Camera loading...'); return; }
+            
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            capturedPhotoData = canvas.toDataURL('image/jpeg', 0.8);
+            photoPreview.src = capturedPhotoData;
+            photoPreview.style.display = 'block';
+            
+            container.classList.remove('active');
+            btnCapture.style.display = 'none';
+            btnRetake.style.display = 'inline-flex';
+            
+            console.log('📸 Photo captured');
+        }
+        
+        function retakePhoto() {
+            const video = document.getElementById('video-preview');
+            const container = document.getElementById('camera-container');
+            const photoPreview = document.getElementById('photo-preview');
+            const btnCapture = document.getElementById('btn-capture');
+            const btnRetake = document.getElementById('btn-retake');
+            
+            capturedPhotoData = null;
+            photoPreview.style.display = 'none';
+            container.classList.add('active');
+            btnCapture.style.display = 'inline-flex';
+            btnRetake.style.display = 'none';
+            video.play();
+        }
+        
+        function closeCamera() {
+            if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+        }
+        
+        async function submitForm() {
+            const email = document.getElementById('email').value.trim();
+            const q1 = document.getElementById('q1').value;
+            const q2 = document.getElementById('q2').value;
+            const q3 = document.getElementById('q3').value;
+            const q4 = document.getElementById('q4').value;
+            const q5 = document.getElementById('q5').value;
+            
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            errorMsg.classList.remove('active');
+            successMsg.classList.remove('active');
+            result.classList.remove('active');
+            
+            if (!capturedPhotoData) { errorMsg.textContent = '❌ Please take a photo!'; errorMsg.classList.add('active'); return; }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errorMsg.textContent = '❌ Valid email required!'; errorMsg.classList.add('active'); return; }
+            if (!q1 || !q2 || !q3 || !q4 || !q5) { errorMsg.textContent = '❌ Answer all questions!'; errorMsg.classList.add('active'); return; }
+            
+            loading.classList.add('active');
+            document.getElementById('btn-submit').disabled = true;
+            
+            try {
+                const formData = {
+                    email: email,
+                    answers: { activity_preference: q1, work_environment: q2, challenge_handling: q3, career_values: q4, information_processing: q5 },
+                    photo: capturedPhotoData
+                };
+                
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Prediction failed');
+                
+                loading.classList.remove('active');
+                successMsg.textContent = '✅ Success!';
+                successMsg.classList.add('active');
+                
+                document.getElementById('result-content').textContent = data.prediction;
+                result.classList.add('active');
+                result.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (err) {
+                loading.classList.remove('active');
+                errorMsg.textContent = '❌ ' + err.message;
+                errorMsg.classList.add('active');
+            } finally {
+                document.getElementById('btn-submit').disabled = false;
+            }
+        }
+        
+        window.addEventListener('beforeunload', () => closeCamera());
+    </script>
+</body>
+</html>
