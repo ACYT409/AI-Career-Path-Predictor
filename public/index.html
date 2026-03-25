@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Career Path Predictor</title>
+    <title>AI 职业方向预测</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -20,13 +20,26 @@
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 2.5em; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 1.1em; }
-        .section { margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px; }
-        .section-title { font-size: 1.3em; color: #667eea; margin-bottom: 15px; font-weight: 600; }
-        
-        #camera-container {
-            display: none;
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        .section-title {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        /* Camera Styles */
+        #video-container {
             position: relative;
             width: 100%;
             max-width: 640px;
@@ -34,322 +47,563 @@
             background: #000;
             border-radius: 10px;
             overflow: hidden;
-            min-height: 480px;
+            display: none;
         }
-        #camera-container.active { display: block; }
-        #video-preview { width: 100%; height: auto; display: block; transform: scaleX(-1); }
-        #canvas-capture { display: none; }
-        .camera-controls { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
-        
+        #video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+        #canvas {
+            display: none;
+        }
+        #photo-preview {
+            width: 100%;
+            max-width: 640px;
+            margin: 20px auto;
+            border-radius: 10px;
+            display: none;
+            border: 4px solid #667eea;
+            transform: scaleX(-1);
+        }
         .btn {
             padding: 12px 30px;
             border: none;
             border-radius: 25px;
             font-size: 1em;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            transition: all 0.3s;
+            margin: 5px;
+            font-weight: bold;
         }
-        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
-        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
-        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4); }
-        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
-        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(235, 51, 73, 0.4); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
-        #photo-preview { display: none; max-width: 100%; border-radius: 10px; margin: 20px auto; border: 4px solid #667eea; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
-        input[type="email"], select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em; transition: border-color 0.3s ease; }
-        input[type="email"]:focus, select:focus { outline: none; border-color: #667eea; }
-        .question-item { margin-bottom: 20px; }
-        .question-text { font-weight: 600; color: #333; margin-bottom: 8px; }
-        
-        .loading { text-align: center; padding: 40px; display: none; }
-        .loading.active { display: block; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .result-section { display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin-top: 30px; }
-        .result-section.active { display: block; }
-        .result-section h2 { margin-bottom: 20px; font-size: 1.8em; }
-        .result-content { line-height: 1.8; white-space: pre-wrap; }
-        
-        .error-message { background: #fee; color: #c33; padding: 15px; border-radius: 10px; margin: 15px 0; display: none; }
-        .error-message.active { display: block; }
-        .success-message { background: #efe; color: #3c3; padding: 15px; border-radius: 10px; margin: 15px 0; display: none; }
-        .success-message.active { display: block; }
-        
-        @media (max-width: 600px) {
-            .container { padding: 20px; }
-            h1 { font-size: 1.8em; }
-            .btn { padding: 10px 20px; font-size: 0.9em; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        input[type="email"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        input[type="email"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .question-item {
+            margin-bottom: 20px;
+        }
+        .question-text {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .options-label {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .options-label:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔮 AI Career Path Predictor</h1>
-        <p class="subtitle">Discover your future career direction with AI analysis</p>
+        <h1>🎯 AI 职业方向预测</h1>
         
         <!-- Camera Section -->
         <div class="section">
-            <div class="section-title">📷 Step 1: Take Your Photo</div>
-            <div id="camera-container"><video id="video-preview" autoplay muted playsinline></video></div>
-            <canvas id="canvas-capture"></canvas>
-            <img id="photo-preview" alt="Captured photo">
-            <div class="camera-controls">
-                <button id="btn-open-camera" class="btn btn-primary" onclick="openCamera()">📷 Open Camera</button>
-                <button id="btn-capture" class="btn btn-success" onclick="capturePhoto()" style="display:none;">✅ Capture Photo</button>
-                <button id="btn-retake" class="btn btn-danger" onclick="retakePhoto()" style="display:none;">🔄 Retake</button>
+            <div class="section-title">📷 拍摄照片</div>
+            <div id="video-container">
+                <video id="video" autoplay playsinline muted></video>
             </div>
-            <div id="camera-error" class="error-message"></div>
+            <canvas id="canvas"></canvas>
+            <img id="photo-preview" alt="照片预览">
+            <div class="button-group">
+                <button id="open-camera-btn" class="btn btn-primary" onclick="openCamera()">
+                    📷 打开摄像头
+                </button>
+                <button id="capture-btn" class="btn btn-success hidden" onclick="capturePhoto()">
+                    ✅ 确认拍照
+                </button>
+                <button id="retake-btn" class="btn btn-secondary hidden" onclick="retakePhoto()">
+                    🔄 重拍
+                </button>
+                <button id="close-camera-btn" class="btn btn-danger hidden" onclick="closeCamera()">
+                    ❌ 关闭摄像头
+                </button>
+            </div>
+            <div id="camera-status" class="status-message hidden"></div>
         </div>
-        
+
         <!-- Email Section -->
         <div class="section">
-            <div class="section-title">📧 Step 2: Your Email</div>
+            <div class="section-title">📧 联系邮箱</div>
             <div class="form-group">
-                <label for="email">Enter your email to receive the career prediction report:</label>
-                <input type="email" id="email" placeholder="your.email@example.com" required>
+                <label for="email">请输入您的邮箱地址（用于接收预测报告）：</label>
+                <input type="email" id="email" placeholder="example@email.com" required>
             </div>
         </div>
-        
+
         <!-- Questions Section -->
         <div class="section">
-            <div class="section-title">❓ Step 3: Answer Questions</div>
+            <div class="section-title">❓ 职业倾向测试</div>
+            
             <div class="question-item">
-                <div class="question-text">1. What type of activities do you enjoy most?</div>
-                <select id="q1">
-                    <option value="">-- Select an option --</option>
-                    <option value="analytical">🔍 Analyzing data and solving complex problems</option>
-                    <option value="creative">🎨 Creating art, designs, or innovative ideas</option>
-                    <option value="social">👥 Helping people and working in teams</option>
-                    <option value="practical">🔧 Building things and working with hands</option>
-                    <option value="leadership">📊 Leading projects and managing people</option>
-                </select>
+                <div class="question-text">1. 你最喜欢的活动类型是？</div>
+                <label class="options-label">
+                    <input type="radio" name="q1" value="analytical" required>
+                    🔍 分析研究、解决复杂问题
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q1" value="creative">
+                    🎨 创意设计、艺术表达
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q1" value="social">
+                    👥 与人交流、帮助他人
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q1" value="practical">
+                    🛠️ 动手操作、实际制作
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q1" value="leadership">
+                    📊 领导团队、制定策略
+                </label>
             </div>
+
             <div class="question-item">
-                <div class="question-text">2. What is your ideal work environment?</div>
-                <select id="q2">
-                    <option value="">-- Select an option --</option>
-                    <option value="office">🏢 Traditional office setting</option>
-                    <option value="remote">🏠 Remote/work from home</option>
-                    <option value="outdoor">🌲 Outdoor or field work</option>
-                    <option value="lab">🔬 Laboratory or research facility</option>
-                    <option value="studio">🎭 Creative studio or workshop</option>
-                </select>
+                <div class="question-text">2. 你理想的工作环境是？</div>
+                <label class="options-label">
+                    <input type="radio" name="q2" value="office" required>
+                    🏢 传统办公室，结构清晰
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q2" value="remote">
+                    🏠 远程工作，自由灵活
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q2" value="outdoor">
+                    🌳 户外环境，亲近自然
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q2" value="lab">
+                    🔬 实验室，专业设备
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q2" value="studio">
+                    🎭 工作室，创意氛围
+                </label>
             </div>
+
             <div class="question-item">
-                <div class="question-text">3. How do you usually handle challenges?</div>
-                <select id="q3">
-                    <option value="">-- Select an option --</option>
-                    <option value="systematic">📋 Break them down systematically</option>
-                    <option value="intuitive">💡 Trust my intuition and experiment</option>
-                    <option value="collaborative">🤝 Ask for help and collaborate</option>
-                    <option value="persistent">💪 Keep trying until I solve it</option>
-                    <option value="strategic">♟️ Plan a strategic approach first</option>
-                </select>
+                <div class="question-text">3. 面对挑战时，你通常会？</div>
+                <label class="options-label">
+                    <input type="radio" name="q3" value="systematic" required>
+                    📋 系统分析，逐步解决
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q3" value="intuitive">
+                    💡 凭直觉快速决策
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q3" value="collaborative">
+                    🤝 寻求团队合作
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q3" value="persistent">
+                    💪 坚持不懈，独自攻克
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q3" value="strategic">
+                    ♟️ 制定策略，寻找捷径
+                </label>
             </div>
+
             <div class="question-item">
-                <div class="question-text">4. What do you value most in a career?</div>
-                <select id="q4">
-                    <option value="">-- Select an option --</option>
-                    <option value="salary">💰 High salary and financial security</option>
-                    <option value="impact">🌟 Making a positive impact on society</option>
-                    <option value="creativity">🎨 Creative freedom and expression</option>
-                    <option value="stability">🛡️ Job stability and work-life balance</option>
-                    <option value="growth">📈 Continuous learning and growth</option>
-                </select>
+                <div class="question-text">4. 你最看重工作的哪些方面？</div>
+                <label class="options-label">
+                    <input type="radio" name="q4" value="salary" required>
+                    💰 高薪待遇
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q4" value="impact">
+                    🌟 社会影响力
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q4" value="creativity">
+                    🎨 创意发挥空间
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q4" value="stability">
+                    🏛️ 工作稳定性
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q4" value="growth">
+                    📈 个人成长机会
+                </label>
             </div>
+
             <div class="question-item">
-                <div class="question-text">5. How do you prefer to process information?</div>
-                <select id="q5">
-                    <option value="">-- Select an option --</option>
-                    <option value="visual">📊 Visual charts and diagrams</option>
-                    <option value="verbal">📖 Reading and writing</option>
-                    <option value="hands-on">👐 Hands-on practice</option>
-                    <option value="discussion">💬 Discussions and debates</option>
-                    <option value="logical">🧮 Logical step-by-step analysis</option>
-                </select>
+                <div class="question-text">5. 你如何处理复杂信息？</div>
+                <label class="options-label">
+                    <input type="radio" name="q5" value="visual" required>
+                    📊 通过图表、可视化方式
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q5" value="textual">
+                    📖 阅读文字资料
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q5" value="hands-on">
+                    🛠️ 动手实践操作
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q5" value="discussion">
+                    💬 与他人讨论交流
+                </label>
+                <label class="options-label">
+                    <input type="radio" name="q5" value="logical">
+                    🧮 逻辑推理分析
+                </label>
             </div>
         </div>
-        
-        <div style="text-align: center; margin-top: 30px;">
-            <button id="btn-submit" class="btn btn-primary" onclick="submitForm()" style="padding: 15px 50px; font-size: 1.2em;">🚀 Get AI Career Prediction</button>
+
+        <!-- Submit Button -->
+        <div class="button-group">
+            <button id="submit-btn" class="btn btn-primary" onclick="submitPrediction()" style="font-size: 1.2em; padding: 15px 40px;">
+                🚀 获取 AI 职业预测
+            </button>
         </div>
-        
-        <div id="loading" class="loading"><div class="spinner"></div><p>Analyzing your profile with AI...</p><p style="color: #666; margin-top: 10px; font-size: 0.9em;">This may take 30-60 seconds</p></div>
-        <div id="error-msg" class="error-message"></div>
-        <div id="success-msg" class="success-message"></div>
-        
-        <div id="result" class="result-section">
-            <h2>🎯 Your AI Career Prediction</h2>
-            <div id="result-content" class="result-content"></div>
-            <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">📧 A detailed report has been sent to your email!</p>
-        </div>
+
+        <!-- Status Message -->
+        <div id="status-message" class="status-message hidden"></div>
     </div>
 
     <script>
-        let capturedPhotoData = null;
-        let stream = null;
-        
+        let videoStream = null;
+        let photoData = null;
+
+        // Open Camera with better compatibility
         async function openCamera() {
-            const video = document.getElementById('video-preview');
-            const container = document.getElementById('camera-container');
-            const errorMsg = document.getElementById('camera-error');
-            const btnOpen = document.getElementById('btn-open-camera');
-            const btnCapture = document.getElementById('btn-capture');
-            
-            errorMsg.classList.remove('active');
-            
+            const video = document.getElementById('video');
+            const videoContainer = document.getElementById('video-container');
+            const captureBtn = document.getElementById('capture-btn');
+            const closeBtn = document.getElementById('close-camera-btn');
+            const openBtn = document.getElementById('open-camera-btn');
+            const statusDiv = document.getElementById('camera-status');
+
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, 
-                    audio: false 
-                });
+                statusDiv.className = 'status-message status-info';
+                statusDiv.textContent = '正在请求摄像头权限...';
+                statusDiv.classList.remove('hidden');
+
+                // Try different constraints for better compatibility
+                const constraints = {
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    },
+                    audio: false
+                };
+
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
                 
-                console.log('📹 Camera stream obtained');
-                video.srcObject = stream;
+                video.srcObject = videoStream;
                 
+                // Force play after metadata loads
                 video.onloadedmetadata = () => {
                     video.play().then(() => {
-                        console.log('✅ Video playing');
-                    }).catch(err => {
-                        console.error('⚠️ Play failed:', err);
+                        console.log('✅ Video playing successfully');
+                    }).catch(playError => {
+                        console.error('⚠️ Play failed:', playError);
+                        // Try again with different approach
+                        video.muted = true;
+                        video.playsInline = true;
                         video.play();
                     });
                 };
-                
-                container.classList.add('active');
-                btnOpen.style.display = 'none';
-                btnCapture.style.display = 'inline-flex';
-                
-                setTimeout(() => { if (video.paused) video.play(); }, 500);
+
+                videoContainer.style.display = 'block';
+                openBtn.classList.add('hidden');
+                captureBtn.classList.remove('hidden');
+                closeBtn.classList.remove('hidden');
+
+                statusDiv.className = 'status-message status-success';
+                statusDiv.textContent = '✅ 摄像头已启动！请点击"确认拍照"';
                 
             } catch (err) {
                 console.error('❌ Camera error:', err);
-                let message = 'Failed to access camera. ';
-                if (err.name === 'NotAllowedError') message += 'Please allow camera permission.';
-                else if (err.name === 'NotFoundError') message += 'No camera found.';
-                else if (err.name === 'NotReadableError') message += 'Camera is busy.';
-                else message += err.message;
+                statusDiv.className = 'status-message status-error';
                 
-                errorMsg.textContent = message;
-                errorMsg.classList.add('active');
+                if (err.name === 'NotAllowedError') {
+                    statusDiv.textContent = '❌ 摄像头权限被拒绝。请在浏览器设置中允许摄像头访问。';
+                } else if (err.name === 'NotFoundError') {
+                    statusDiv.textContent = '❌ 未找到摄像头设备。请检查是否连接了摄像头。';
+                } else if (err.name === 'NotReadableError') {
+                    statusDiv.textContent = '❌ 摄像头可能被其他程序占用。请关闭其他使用摄像头的软件后重试。';
+                } else {
+                    statusDiv.textContent = '❌ 无法启动摄像头：' + err.message;
+                }
             }
         }
-        
+
+        // Capture Photo
         function capturePhoto() {
-            const video = document.getElementById('video-preview');
-            const canvas = document.getElementById('canvas-capture');
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
             const photoPreview = document.getElementById('photo-preview');
-            const container = document.getElementById('camera-container');
-            const btnCapture = document.getElementById('btn-capture');
-            const btnRetake = document.getElementById('btn-retake');
-            
-            if (video.readyState < 2) { alert('Camera loading...'); return; }
-            
+            const videoContainer = document.getElementById('video-container');
+            const captureBtn = document.getElementById('capture-btn');
+            const retakeBtn = document.getElementById('retake-btn');
+            const closeBtn = document.getElementById('close-camera-btn');
+
+            if (!videoStream) {
+                alert('请先打开摄像头！');
+                return;
+            }
+
+            // Set canvas size to match video
             canvas.width = video.videoWidth || 640;
             canvas.height = video.videoHeight || 480;
-            
+
+            // Draw video frame to canvas (flip horizontally)
             const ctx = canvas.getContext('2d');
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            capturedPhotoData = canvas.toDataURL('image/jpeg', 0.8);
-            photoPreview.src = capturedPhotoData;
+
+            // Convert to base64
+            photoData = canvas.toDataURL('image/jpeg', 0.8);
+            photoPreview.src = photoData;
             photoPreview.style.display = 'block';
-            
-            container.classList.remove('active');
-            btnCapture.style.display = 'none';
-            btnRetake.style.display = 'inline-flex';
-            
-            console.log('📸 Photo captured');
+
+            // Stop video stream
+            closeCamera();
+
+            // Update buttons
+            videoContainer.style.display = 'none';
+            captureBtn.classList.add('hidden');
+            retakeBtn.classList.remove('hidden');
+
+            alert('✅ 照片已拍摄成功！');
         }
-        
+
+        // Retake Photo
         function retakePhoto() {
-            const video = document.getElementById('video-preview');
-            const container = document.getElementById('camera-container');
             const photoPreview = document.getElementById('photo-preview');
-            const btnCapture = document.getElementById('btn-capture');
-            const btnRetake = document.getElementById('btn-retake');
-            
-            capturedPhotoData = null;
+            const videoContainer = document.getElementById('video-container');
+            const captureBtn = document.getElementById('capture-btn');
+            const retakeBtn = document.getElementById('retake-btn');
+            const openBtn = document.getElementById('open-camera-btn');
+
             photoPreview.style.display = 'none';
-            container.classList.add('active');
-            btnCapture.style.display = 'inline-flex';
-            btnRetake.style.display = 'none';
-            video.play();
+            photoData = null;
+
+            retakeBtn.classList.add('hidden');
+            openBtn.classList.remove('hidden');
+            
+            openCamera();
         }
-        
+
+        // Close Camera
         function closeCamera() {
-            if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+            const video = document.getElementById('video');
+            const videoContainer = document.getElementById('video-container');
+            const statusDiv = document.getElementById('camera-status');
+
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+
+            video.srcObject = null;
+            videoContainer.style.display = 'none';
+            statusDiv.classList.add('hidden');
         }
-        
-        async function submitForm() {
+
+        // Get selected radio value
+        function getRadioValue(name) {
+            const radios = document.getElementsByName(name);
+            for (let i = 0; i < radios.length; i++) {
+                if (radios[i].checked) {
+                    return radios[i].value;
+                }
+            }
+            return null;
+        }
+
+        // Submit Prediction
+        async function submitPrediction() {
             const email = document.getElementById('email').value.trim();
-            const q1 = document.getElementById('q1').value;
-            const q2 = document.getElementById('q2').value;
-            const q3 = document.getElementById('q3').value;
-            const q4 = document.getElementById('q4').value;
-            const q5 = document.getElementById('q5').value;
-            
-            const errorMsg = document.getElementById('error-msg');
-            const successMsg = document.getElementById('success-msg');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            
-            errorMsg.classList.remove('active');
-            successMsg.classList.remove('active');
-            result.classList.remove('active');
-            
-            if (!capturedPhotoData) { errorMsg.textContent = '❌ Please take a photo!'; errorMsg.classList.add('active'); return; }
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errorMsg.textContent = '❌ Valid email required!'; errorMsg.classList.add('active'); return; }
-            if (!q1 || !q2 || !q3 || !q4 || !q5) { errorMsg.textContent = '❌ Answer all questions!'; errorMsg.classList.add('active'); return; }
-            
-            loading.classList.add('active');
-            document.getElementById('btn-submit').disabled = true;
-            
+            const q1 = getRadioValue('q1');
+            const q2 = getRadioValue('q2');
+            const q3 = getRadioValue('q3');
+            const q4 = getRadioValue('q4');
+            const q5 = getRadioValue('q5');
+            const statusDiv = document.getElementById('status-message');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Validation
+            if (!email) {
+                alert('请输入邮箱地址！');
+                return;
+            }
+
+            if (!q1 || !q2 || !q3 || !q4 || !q5) {
+                alert('请回答所有问题！');
+                return;
+            }
+
+            if (!photoData) {
+                alert('请先拍摄照片！');
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('请输入有效的邮箱地址！');
+                return;
+            }
+
+            // Show loading
+            statusDiv.className = 'status-message status-info';
+            statusDiv.innerHTML = '<span class="loading"></span>正在分析中，请稍候...';
+            statusDiv.classList.remove('hidden');
+            submitBtn.disabled = true;
+
             try {
-                const formData = {
+                // Prepare data
+                const requestData = {
                     email: email,
-                    answers: { activity_preference: q1, work_environment: q2, challenge_handling: q3, career_values: q4, information_processing: q5 },
-                    photo: capturedPhotoData
+                    answers: {
+                        q1: q1,
+                        q2: q2,
+                        q3: q3,
+                        q4: q4,
+                        q5: q5
+                    },
+                    photo: photoData
                 };
-                
+
+                // Call API
                 const response = await fetch('/api/predict', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
                 });
-                
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Prediction failed');
-                
-                loading.classList.remove('active');
-                successMsg.textContent = '✅ Success!';
-                successMsg.classList.add('active');
-                
-                document.getElementById('result-content').textContent = data.prediction;
-                result.classList.add('active');
-                result.scrollIntoView({ behavior: 'smooth' });
-                
-            } catch (err) {
-                loading.classList.remove('active');
-                errorMsg.textContent = '❌ ' + err.message;
-                errorMsg.classList.add('active');
-            } finally {
-                document.getElementById('btn-submit').disabled = false;
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    statusDiv.className = 'status-message status-success';
+                    statusDiv.innerHTML = '✅ 预测完成！详细报告已发送到您的邮箱：<strong>' + email + '</strong>';
+                    
+                    // Reset form after 3 seconds
+                    setTimeout(() => {
+                        statusDiv.classList.add('hidden');
+                        submitBtn.disabled = false;
+                        // Optional: reset form
+                        // location.reload();
+                    }, 5000);
+                } else {
+                    throw new Error(result.error || '预测失败');
+                }
+
+            } catch (error) {
+                console.error('Submission error:', error);
+                statusDiv.className = 'status-message status-error';
+                statusDiv.innerHTML = '❌ 错误：' + error.message;
+                submitBtn.disabled = false;
             }
         }
-        
-        window.addEventListener('beforeunload', () => closeCamera());
     </script>
 </body>
 </html>
+// FORCE DEPLOY 1774415713
