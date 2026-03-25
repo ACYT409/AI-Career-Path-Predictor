@@ -1,12 +1,9 @@
 {
   "name": "ai-career-predictor",
   "version": "1.0.0",
-  "description": "AI Career Path Predictor with NVIDIA API",
-  "main": "index.js",
+  "description": "Pure HTML AI Career Predictor - No Build Required",
   "scripts": {
-    "test": "echo \"No tests\""
+    "test": "echo \"No build needed, pure static site\""
   },
-  "keywords": ["ai", "career", "nvidia"],
-  "author": "",
-  "license": "MIT"
+  "dependencies": {}
 }
