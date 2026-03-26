@@ -120,7 +120,6 @@
     let stream = null;
     let photoData = null;
 
-    // Camera Logic
     document.getElementById('startBtn').onclick = async () => {
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -137,84 +136,60 @@
         const ctx = canvas.getContext('2d');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
+        ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0);
         photoData = canvas.toDataURL('image/jpeg');
-        video.style.display = 'none';
-        canvas.style.display = 'block';
+        video.style.display = 'none'; canvas.style.display = 'block';
         document.getElementById('captureBtn').style.display = 'none';
         document.getElementById('retakeBtn').style.display = 'block';
     };
 
     document.getElementById('retakeBtn').onclick = () => {
-        photoData = null;
-        canvas.style.display = 'none';
-        video.style.display = 'block';
-        document.getElementById('retakeBtn').style.display = 'none';
-        document.getElementById('captureBtn').style.display = 'block';
+        photoData = null; canvas.style.display = 'none'; video.style.display = 'block';
+        document.getElementById('retakeBtn').style.display = 'none'; document.getElementById('captureBtn').style.display = 'block';
     };
 
-    // Submit Logic (GUARANTEED MODAL)
     document.getElementById('form').onsubmit = async (e) => {
         e.preventDefault();
         if(!photoData) return alert('请先拍照');
-        
-        // 1. Immediately Show Modal
         const modal = document.getElementById('modal');
         const body = document.getElementById('modalBody');
         modal.style.display = 'flex';
-        body.innerHTML = '<div class="loading">⏳ 正在分析您的数据...</div>';
-
-        const data = {
-            email: document.getElementById('email').value,
-            answers: {
-                q1: document.getElementById('q1').value,
-                q2: document.getElementById('q2').value,
-                q3: document.getElementById('q3').value,
-                q4: document.getElementById('q4').value,
-                q5: document.getElementById('q5').value
-            },
-            photo: photoData
-        };
+        body.innerHTML = '<div class="loading">⏳ 正在分析數據（預計 10-15 秒）...</div>';
 
         try {
             const res = await fetch('/api/predict', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    email: document.getElementById('email').value,
+                    answers: { q1: document.getElementById('q1').value, q2: document.getElementById('q2').value, q3: document.getElementById('q3').value, q4: document.getElementById('q4').value, q5: document.getElementById('q5').value },
+                    photo: photoData
+                })
             });
             const result = await res.json();
-            
             if(res.ok && result.report) {
                 showResult(result.report, true);
             } else {
-                throw new Error(result.error || 'API 错误');
+                throw new Error(result.error || 'API 解析失敗');
             }
         } catch(err) {
             console.error(err);
-            // Fallback if API fails
-            showResult(generateFallback(data.answers), false, err.message);
+            showResult({ career: '分析超時', reason: '請檢查網絡並重試。', steps: ['重新提交', '檢查 API 配置'] }, false, err.message);
         }
     };
 
+    // --- 關鍵修正：防禦性顯示邏輯 ---
     function showResult(report, success, errorMsg) {
         const body = document.getElementById('modalBody');
-        body.innerHTML = `
-            <div class="result-item"><span class="result-label">🎯 推荐职业</span><b>${report.career}</b></div>
-            <div class="result-item"><span class="result-label">💡 理由</span>${report.reason}</div>
-            <div class="result-item"><span class="result-label">🛣️ 建议</span><ul>${report.steps.map(s=>`<li>${s}</li>`).join('')}</ul></div>
-            ${success ? '<div style="color:green; margin-top:10px">✅ 报告已发送至邮箱</div>' : `<div style="color:red; margin-top:10px">⚠️ ${errorMsg || '演示模式'}</div>`}
-        `;
-    }
+        const format = (v) => (typeof v === 'object' ? (v.name || v.title || JSON.stringify(v)) : (v || '無數據'));
 
-    function generateFallback(a) {
-        const map = { 'analytical':'工程师', 'creative':'设计师', 'social':'咨询师', 'practical':'建筑师', 'leadership':'经理人' };
-        return {
-            career: map[a.q1] || '综合专家',
-            reason: '基于您的选择，您适合' + a.q1 + '类型的工作。',
-            steps: ['学习基础技能', '积累项目经验', '成为领域专家']
-        };
+        body.innerHTML = `
+            <div class="result-item"><span class="result-label">🎯 推荐职业</span><b>${format(report.career)}</b></div>
+            <div class="result-item"><span class="result-label">💡 理由</span>${format(report.reason)}</div>
+            <div class="result-item"><span class="result-label">🛣️ 建议</span><ul>${(report.steps || []).map(s => `<li>${format(s}</li>`).join('')}</ul></div>
+            ${success ? '<div style="color:green; margin-top:10px">✅ 报告已发送至邮箱</div>' : `<div style="color:red; margin-top:10px">⚠️ 錯誤: ${errorMsg}</div>`}
+        `;
     }
 
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
