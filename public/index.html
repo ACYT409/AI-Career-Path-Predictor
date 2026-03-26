@@ -17,8 +17,6 @@
         .btn { display: block; width: 100%; padding: 0.75rem; background: var(--primary); color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 10px; }
         .btn:hover { opacity: 0.9; }
         .btn-secondary { background: #6b7280; }
-        
-        /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #fff; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative; }
         .close-modal { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
@@ -30,7 +28,6 @@
 <body>
 <div class="container">
     <h1>🔮 AI 职业方向预测</h1>
-    
     <div class="camera-section">
         <video id="video" autoplay playsinline muted></video>
         <canvas id="canvas"></canvas>
@@ -41,70 +38,16 @@
     <button id="retakeBtn" class="btn btn-secondary" style="display:none">🔄 重拍</button>
 
     <form id="form" style="margin-top: 2rem;">
-        <div class="form-group">
-            <label>📧 邮箱</label>
-            <input type="email" id="email" required placeholder="your@email.com">
-        </div>
-        <div class="form-group">
-            <label>1. 喜欢的活动？</label>
-            <select id="q1" required>
-                <option value="">请选择...</option>
-                <option value="analytical">📊 分析逻辑</option>
-                <option value="creative">🎨 创意艺术</option>
-                <option value="social">🤝 社交帮助</option>
-                <option value="practical">🛠️ 动手操作</option>
-                <option value="leadership">🚀 领导管理</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>2. 理想环境？</label>
-            <select id="q2" required>
-                <option value="">请选择...</option>
-                <option value="office">🏢 办公室</option>
-                <option value="remote">🏠 远程</option>
-                <option value="outdoor">🌳 户外</option>
-                <option value="lab">🔬 实验室</option>
-                <option value="studio">🎭 工作室</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>3. 面对挑战？</label>
-            <select id="q3" required>
-                <option value="">请选择...</option>
-                <option value="systematic">📝 系统分析</option>
-                <option value="intuitive">💡 直觉反应</option>
-                <option value="collaborative">👥 团队合作</option>
-                <option value="persistent">💪 坚持攻克</option>
-                <option value="strategic">♟️ 策略迂回</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>4. 看重什么？</label>
-            <select id="q4" required>
-                <option value="">请选择...</option>
-                <option value="salary">💰 高薪</option>
-                <option value="impact">🌍 影响力</option>
-                <option value="creativity">🎨 创造力</option>
-                <option value="stability">🛡️ 稳定</option>
-                <option value="growth">📈 成长</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>5. 处理信息？</label>
-            <select id="q5" required>
-                <option value="">请选择...</option>
-                <option value="visual">👁️ 视觉图表</option>
-                <option value="textual">📖 文字阅读</option>
-                <option value="hands-on">👐 实际操作</option>
-                <option value="discussion">🗣️ 讨论交流</option>
-                <option value="logical">🧮 逻辑推导</option>
-            </select>
-        </div>
+        <div class="form-group"><label>📧 邮箱</label><input type="email" id="email" required placeholder="your@email.com"></div>
+        <div class="form-group"><label>1. 喜欢的活动？</label><select id="q1" required><option value="">请选择...</option><option value="analytical">📊 分析逻辑</option><option value="creative">🎨 创意艺术</option><option value="social">🤝 社交帮助</option><option value="practical">🛠️ 动手操作</option><option value="leadership">🚀 领导管理</option></select></div>
+        <div class="form-group"><label>2. 理想环境？</label><select id="q2" required><option value="">请选择...</option><option value="office">🏢 办公室</option><option value="remote">🏠 远程</option><option value="outdoor">🌳 戶外</option><option value="lab">🔬 实验室</option><option value="studio">🎭 工作室</option></select></div>
+        <div class="form-group"><label>3. 面对挑战？</label><select id="q3" required><option value="">请选择...</option><option value="systematic">📝 系统分析</option><option value="intuitive">💡 直觉反应</option><option value="collaborative">👥 团队合作</option><option value="persistent">💪 坚持攻克</option><option value="strategic">♟️ 策略迂回</option></select></div>
+        <div class="form-group"><label>4. 看重什么？</label><select id="q4" required><option value="">请选择...</option><option value="salary">💰 高薪</option><option value="impact">🌍 影响力</option><option value="creativity">🎨 創造力</option><option value="stability">🛡️ 穩定</option><option value="growth">📈 成長</option></select></div>
+        <div class="form-group"><label>5. 处理信息？</label><select id="q5" required><option value="">請選擇...</option><option value="visual">👁️ 視覺圖表</option><option value="textual">📖 文字閱讀</option><option value="hands-on">👐 實際操作</option><option value="discussion">🗣️ 討論交流</option><option value="logical">🧮 邏輯推導</option></select></div>
         <button type="submit" class="btn">🚀 获取预测</button>
     </form>
 </div>
 
-<!-- Modal -->
 <div id="modal" class="modal-overlay">
     <div class="modal-content">
         <button class="close-modal" onclick="closeModal()">&times;</button>
@@ -129,7 +72,10 @@
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('captureBtn').style.display = 'block';
             video.play();
-        } catch(e) { alert('摄像头错误: ' + e.message); }
+        } catch(e) { 
+            console.error(e);
+            alert('摄像头错误: ' + e.message); 
+        }
     };
 
     document.getElementById('captureBtn').onclick = () => {
@@ -152,6 +98,7 @@
     document.getElementById('form').onsubmit = async (e) => {
         e.preventDefault();
         if(!photoData) return alert('请先拍照');
+        
         const modal = document.getElementById('modal');
         const body = document.getElementById('modalBody');
         modal.style.display = 'flex';
@@ -175,11 +122,11 @@
             }
         } catch(err) {
             console.error(err);
-            showResult({ career: '分析超時', reason: '請檢查網絡並重試。', steps: ['重新提交', '檢查 API 配置'] }, false, err.message);
+            showResult({ career: '分析失敗', reason: '請檢查網絡連通性或環境變量配置。', steps: ['重新提交請求', '聯繫管理員'] }, false, err.message);
         }
     };
 
-    // --- 關鍵修正：防禦性顯示邏輯 ---
+    // --- 核心修正：修復了括號錯誤並增強顯示穩定性 ---
     function showResult(report, success, errorMsg) {
         const body = document.getElementById('modalBody');
         const format = (v) => (typeof v === 'object' ? (v.name || v.title || JSON.stringify(v)) : (v || '無數據'));
@@ -187,7 +134,7 @@
         body.innerHTML = `
             <div class="result-item"><span class="result-label">🎯 推荐职业</span><b>${format(report.career)}</b></div>
             <div class="result-item"><span class="result-label">💡 理由</span>${format(report.reason)}</div>
-            <div class="result-item"><span class="result-label">🛣️ 建议</span><ul>${(report.steps || []).map(s => `<li>${format(s}</li>`).join('')}</ul></div>
+            <div class="result-item"><span class="result-label">🛣️ 建议</span><ul>${(report.steps || []).map(s => `<li>${format(s)}</li>`).join('')}</ul></div>
             ${success ? '<div style="color:green; margin-top:10px">✅ 报告已发送至邮箱</div>' : `<div style="color:red; margin-top:10px">⚠️ 錯誤: ${errorMsg}</div>`}
         `;
     }
