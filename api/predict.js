@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 
-// Vercel Serverless 配置
 export const config = {
   api: {
     bodyParser: { sizeLimit: '10mb' },
@@ -9,19 +8,20 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // 設置跨域與響應頭
+  // 設置 CORS 頭
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ success: false, error: '只接受 POST 請求' });
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method Not Allowed' });
 
   try {
     const { email, answers } = req.body;
     const { NVIDIA_API_KEY, EMAIL_USER, EMAIL_PASS } = process.env;
     let aiReport = null;
 
+    // 1. 調用 NVIDIA AI
     if (NVIDIA_API_KEY) {
       try {
         const prompt = `你是一位專業職業規劃師。請根據問卷生成JSON報告。
@@ -31,7 +31,10 @@ export default async function handler(req, res) {
 
         const aiResponse = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${NVIDIA_API_KEY}`, 'Content-Type': 'application/json' },
+          headers: { 
+            'Authorization': `Bearer ${NVIDIA_API_KEY}`, 
+            'Content-Type': 'application/json' 
+          },
           body: JSON.stringify({
             model: "meta/llama-3.1-8b-instruct",
             messages: [{ role: "user", content: prompt }],
@@ -45,7 +48,7 @@ export default async function handler(req, res) {
           const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
           const raw = JSON.parse(cleanJson);
 
-          // 【關鍵：數據清洗】防止 [object Object]
+          // 數據標準化清理：防止 [object Object]
           aiReport = {
             career: typeof raw.career === 'object' ? (raw.career.name || raw.career.title || "專業人才") : (raw.career || "專業人才"),
             reason: raw.reason || raw.explanation || "基於您的特質分析得出。",
@@ -57,17 +60,17 @@ export default async function handler(req, res) {
       }
     }
 
-    // 兜底方案
+    // 2. 兜底方案
     if (!aiReport) {
       const map = { 'analytical': '數據工程師', 'creative': '視覺設計師', 'social': '諮詢顧問', 'practical': '技術專家', 'leadership': '項目經理' };
       aiReport = {
         career: map[answers.q1] || '全能型人才',
-        reason: '由於 AI 響應異常，這是基於您首選傾向的預測報告。',
+        reason: '由於 AI 響應超時或格式異常，這是基於您首選傾向的預測報告。',
         steps: ['掌握核心工具', '建立作品集', '尋找行業導師']
       };
     }
 
-    // 發送郵件
+    // 3. 發送郵件
     if (EMAIL_USER && EMAIL_PASS) {
       try {
         const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: EMAIL_USER, pass: EMAIL_PASS } });
@@ -75,7 +78,7 @@ export default async function handler(req, res) {
           from: `"AI Predictor" <${EMAIL_USER}>`,
           to: email,
           subject: '🔮 您的職業預測報告',
-          html: `<h2>🎯 推薦職業: ${aiReport.career}</h2><p>💡 理由: ${aiReport.reason}</p><ul>${aiReport.steps.map(s => `<li>${s}</li>`).join('')}</ul>`
+          html: `<div style="font-family:sans-serif;"><h2>🎯 推薦職業: ${aiReport.career}</h2><p>💡 理由: ${aiReport.reason}</p><h3>🛣️ 建議路徑:</h3><ul>${aiReport.steps.map(s => `<li>${s}</li>`).join('')}</ul></div>`
         });
       } catch (mE) {
         console.error('郵件發送失敗:', mE);
@@ -85,6 +88,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, report: aiReport, emailSent: !!(EMAIL_USER && EMAIL_PASS) });
 
   } catch (error) {
-    return res.status(500).json({ success: false, error: '伺服器錯誤', details: error.message });
+    console.error('API 全局錯誤:', error);
+    return res.status(500).json({ success: false, error: '伺服器內部錯誤', details: error.message });
   }
 }
